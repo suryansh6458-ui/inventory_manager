@@ -1,0 +1,261 @@
+# Inventory and Stock Management System
+
+import csv
+import os
+
+FILE_NAME = "inventory.csv"
+
+# Create the inventory file if it does not exist
+if not os.path.exists(FILE_NAME):
+    with open(FILE_NAME, "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["ID", "Product", "Quantity", "Price"])
+
+# Load existing inventory
+products = []
+
+with open(FILE_NAME, "r", newline="") as file:
+    reader = csv.reader(file)
+    next(reader, None)
+
+    for row in reader:
+        if len(row) == 4:
+            products.append([
+                int(row[0]),
+                row[1],
+                int(row[2]),
+                float(row[3])
+            ])
+
+print("=" * 50)
+print("       INVENTORY MANAGEMENT SYSTEM")
+print("=" * 50)
+
+while True:
+    print("\n1. Add Product")
+    print("2. Display All Products")
+    print("3. Search Product")
+    print("4. Record Sale")
+    print("5. Restock Product")
+    print("6. Low Stock Report")
+    print("7. Total Inventory Value")
+    print("8. Exit")
+
+    choice = input("\nEnter your choice: ")
+
+    if choice == "1":
+        name = input("Enter product name: ").strip()
+
+        try:
+            quantity = int(input("Enter quantity: "))
+            price = float(input("Enter price per unit: "))
+
+            if name == "" or quantity < 0 or price < 0:
+                print("Invalid product details.")
+
+            else:
+                product_id = 1
+
+                for product in products:
+                    product_id = max(
+                        product_id,
+                        product[0] + 1
+                    )
+
+                products.append([
+                    product_id,
+                    name,
+                    quantity,
+                    price
+                ])
+
+                # Save inventory
+                with open(FILE_NAME, "w", newline="") as file:
+                    writer = csv.writer(file)
+                    writer.writerow([
+                        "ID", "Product", "Quantity", "Price"
+                    ])
+                    writer.writerows(products)
+
+                print("Product added successfully!")
+                print("Product ID:", product_id)
+
+        except ValueError:
+            print("Enter valid numeric values.")
+
+    elif choice == "2":
+        if len(products) == 0:
+            print("Inventory is empty.")
+
+        else:
+            print("\n" + "-" * 65)
+            print(
+                f"{'ID':<6}{'Product':<25}"
+                f"{'Quantity':<12}{'Price':<12}{'Value':<12}"
+            )
+            print("-" * 65)
+
+            for product in products:
+                value = product[2] * product[3]
+
+                print(
+                    f"{product[0]:<6}{product[1]:<25}"
+                    f"{product[2]:<12}"
+                    f"{product[3]:<12.2f}"
+                    f"{value:<12.2f}"
+                )
+
+    elif choice == "3":
+        search_name = input(
+            "Enter product name or keyword: "
+        ).strip().lower()
+
+        found = False
+
+        for product in products:
+            if search_name in product[1].lower():
+                print("\nProduct Found!")
+                print("ID:", product[0])
+                print("Name:", product[1])
+                print("Quantity:", product[2])
+                print("Price:", product[3])
+
+                found = True
+
+        if found == False:
+            print("No matching product found.")
+
+    elif choice == "4":
+        try:
+            product_id = int(input("Enter product ID: "))
+            sale_quantity = int(input("Enter quantity sold: "))
+
+            found = False
+
+            if sale_quantity <= 0:
+                print("Sale quantity must be positive.")
+
+            else:
+                for product in products:
+                    if product[0] == product_id:
+                        found = True
+
+                        if sale_quantity <= product[2]:
+                            product[2] -= sale_quantity
+
+                            total_amount = (
+                                sale_quantity * product[3]
+                            )
+
+                            print("Sale recorded successfully!")
+                            print(
+                                f"Total amount: ₹{total_amount:.2f}"
+                            )
+                            print(
+                                "Remaining stock:",
+                                product[2]
+                            )
+
+                            # Save updated inventory
+                            with open(
+                                FILE_NAME, "w", newline=""
+                            ) as file:
+                                writer = csv.writer(file)
+                                writer.writerow([
+                                    "ID", "Product",
+                                    "Quantity", "Price"
+                                ])
+                                writer.writerows(products)
+
+                        else:
+                            print("Insufficient stock!")
+
+                if found == False:
+                    print("Product ID not found.")
+
+        except ValueError:
+            print("Enter valid numeric values.")
+
+    elif choice == "5":
+        try:
+            product_id = int(input("Enter product ID: "))
+            add_quantity = int(input("Enter quantity to add: "))
+
+            found = False
+
+            if add_quantity <= 0:
+                print("Quantity must be positive.")
+
+            else:
+                for product in products:
+                    if product[0] == product_id:
+                        found = True
+                        product[2] += add_quantity
+
+                        print("Stock updated successfully!")
+                        print("New quantity:", product[2])
+
+                        # Save updated inventory
+                        with open(
+                            FILE_NAME, "w", newline=""
+                        ) as file:
+                            writer = csv.writer(file)
+                            writer.writerow([
+                                "ID", "Product",
+                                "Quantity", "Price"
+                            ])
+                            writer.writerows(products)
+
+                if found == False:
+                    print("Product ID not found.")
+
+        except ValueError:
+            print("Enter valid numeric values.")
+
+    elif choice == "6":
+        try:
+            threshold = int(
+                input("Enter low-stock threshold: ")
+            )
+
+            if threshold < 0:
+                print("Threshold cannot be negative.")
+
+            else:
+                print("\nLOW STOCK REPORT")
+                print("-" * 35)
+
+                found = False
+
+                for product in products:
+                    if product[2] <= threshold:
+                        print(
+                            product[1],
+                            "- Quantity:",
+                            product[2]
+                        )
+                        found = True
+
+                if found == False:
+                    print("No products below the threshold.")
+
+        except ValueError:
+            print("Enter a valid number.")
+
+    elif choice == "7":
+        total_value = 0
+
+        for product in products:
+            total_value += product[2] * product[3]
+
+        print(
+            f"\nTotal Inventory Value: ₹{total_value:.2f}"
+        )
+
+    elif choice == "8":
+        print("Inventory saved successfully.")
+        print("Thank you for using the system!")
+        break
+
+    else:
+        print("Invalid choice. Please select 1 to 8.")
